@@ -27,7 +27,6 @@ public class DiscountCard {
         DiscountCard that = (DiscountCard) o;
         return Objects.equals(cardNumber, that.cardNumber)
                 && (discount.compareTo(that.discount) == 0);
-
     }
 
     @Override
