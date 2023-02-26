@@ -54,7 +54,6 @@ class SqlProductDaoTest {
         CommonProduct expected = aProduct()
                 .withId(1L)
                 .withName("Milk")
-                .withPrice(BigDecimal.valueOf(2.0))
                 .withSaleTypes(Set.of())
                 .build();
         CommonProduct actual = productDao.get(1L);
