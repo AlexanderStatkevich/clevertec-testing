@@ -9,10 +9,19 @@ import java.util.List;
 
 public class PrepareStringToPrintUtil {
 
+    public static void main(String[] args) {
+        ReceiptDto receiptDtoExpected = new ReceiptDto(List.of(
+                new ReceiptRow(6, "Name1", BigDecimal.valueOf(5), BigDecimal.valueOf(10), BigDecimal.valueOf(27), BigDecimal.valueOf(3)),
+                new ReceiptRow(3, "Name2", BigDecimal.valueOf(10), BigDecimal.valueOf(3), BigDecimal.valueOf(29.1), BigDecimal.valueOf(0.9))),
+                BigDecimal.valueOf(56.1));
+
+        prepareReceipt(receiptDtoExpected);
+    }
+
     public static String prepareReceipt(ReceiptDto receiptDto) {
 
         Formatter fmt = new Formatter();
-        fmt.format("%15s %15s %15s %15s %15s %15s\n\n", "Quantity", "Description", "Price","Total", "Sale", "Sale Amount");
+        fmt.format("%15s %15s %15s %15s %15s %15s\n\n", "Quantity", "Description", "Price", "Total", "Sale", "Sale Amount");
 
         List<ReceiptRow> receiptRowList = receiptDto.receiptRow();
         for (ReceiptRow receiptRow : receiptRowList) {

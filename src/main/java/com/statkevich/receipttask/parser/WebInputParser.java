@@ -2,6 +2,8 @@ package com.statkevich.receipttask.parser;
 
 import com.statkevich.receipttask.dto.InputPositionDto;
 import com.statkevich.receipttask.dto.InputValuesDto;
+import com.statkevich.receipttask.service.ProductService;
+
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -9,10 +11,15 @@ import java.util.regex.Pattern;
 public class WebInputParser extends BaseInputParser<Map<String, String[]>> {
 
     private static final Pattern ONLY_DIGITS_PATTERN = Pattern.compile("\\d+");
+
+    public WebInputParser(ProductService productService) {
+        super(productService);
+    }
+
     @Override
     protected InputValuesDto parseInternal(Map<String, String[]> input) {
-        String cardNumber =null;
-        if(input.containsKey(CARD)){
+        String cardNumber = null;
+        if (input.containsKey(CARD)) {
             cardNumber = input.get(CARD)[0];
         }
         List<InputPositionDto> inputPositionDto = input.entrySet().stream()

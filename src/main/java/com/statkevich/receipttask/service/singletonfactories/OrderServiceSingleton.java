@@ -8,11 +8,11 @@ public class OrderServiceSingleton {
     private OrderServiceSingleton() {
     }
 
-    public static OrderService getINSTANCE() {
+    public static OrderService getInstance() {
         if (INSTANCE == null) {
             synchronized (OrderServiceSingleton.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = new OrderService(DiscountCardServiceSingleton.getINSTANCE());
+                    INSTANCE = new OrderService(DiscountCardServiceSingleton.getInstance());
                 }
             }
         }
