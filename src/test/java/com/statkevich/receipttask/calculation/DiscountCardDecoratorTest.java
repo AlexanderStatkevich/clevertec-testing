@@ -1,44 +1,52 @@
 package com.statkevich.receipttask.calculation;
 
-import com.statkevich.receipttask.domain.CommonProduct;
 import com.statkevich.receipttask.domain.DiscountCard;
-import com.statkevich.receipttask.domain.SaleType;
 import com.statkevich.receipttask.dto.PositionDto;
 import com.statkevich.receipttask.dto.ReceiptRow;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
-import java.util.Set;
+import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.statkevich.receipttask.testutil.model.PositionDtoTestBuilder.aPositionDto;
+import static com.statkevich.receipttask.testutil.model.ReceiptRowTestBuilder.aReceiptRow;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DiscountCardDecoratorTest {
 
-    private final Long ID = 1L;
-    private final String NAME = "name";
-    private final int QUANTITY = 5;
-    private final BigDecimal SALE_PERCENTAGE_EXPECTED = BigDecimal.valueOf(5);
-    private final BigDecimal SALE_MULTIPLIER = BigDecimal.ONE.subtract(SALE_PERCENTAGE_EXPECTED.multiply(BigDecimal.valueOf(0.01)));
-    private final BigDecimal PRICE = BigDecimal.TEN;
-    private final BigDecimal FULL_TOTAL_ROW = PRICE.multiply(BigDecimal.valueOf(QUANTITY));
-    private final BigDecimal SALE_TOTAL_ROW = FULL_TOTAL_ROW.multiply(SALE_MULTIPLIER);
-    private final BigDecimal SALE_AMOUNT_EXPECTED = FULL_TOTAL_ROW.subtract(SALE_TOTAL_ROW);
-
-    private final DiscountCardDecorator discountCardDecorator;
-
-    private final CommonProduct product;
-
-    public DiscountCardDecoratorTest() {
-        this.discountCardDecorator = new DiscountCardDecorator(new TenPercentOffForMoreThanFiveProducts(new FullCostCalculator()), new DiscountCard("1234", SALE_PERCENTAGE_EXPECTED.multiply(BigDecimal.valueOf(0.01))));
-        this.product = new CommonProduct(ID, NAME, PRICE, Set.of(SaleType.TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS));
+    private static Stream<Arguments> providePositionsAndReceiptRowsToTest() {
+        return Stream.of(
+                Arguments.of(
+                        aPositionDto().build(),
+                        aReceiptRow().build()
+                ),
+                Arguments.of(
+                        aPositionDto()
+                                .withQuantity(4).build(),
+                        aReceiptRow()
+                                .withQuantity(4)
+                                .withSalePercentage(BigDecimal.valueOf(5))
+                                .withTotalRow(BigDecimal.valueOf(19))
+                                .withSaleAmount(BigDecimal.valueOf(1))
+                                .build()
+                )
+        );
     }
 
-    @Test
-    void checkCalculate() {
-        PositionDto positionDto = new PositionDto(product, QUANTITY);
-        ReceiptRow receiptRow = discountCardDecorator.calculate(positionDto);
-        assertEquals(new ReceiptRow(QUANTITY, NAME, PRICE, SALE_PERCENTAGE_EXPECTED, SALE_TOTAL_ROW, SALE_AMOUNT_EXPECTED), receiptRow);
+    @DisplayName("Check decorator calculation")
+    @ParameterizedTest
+    @MethodSource("providePositionsAndReceiptRowsToTest")
+    void checkCalculatedReceiptRow(PositionDto toCalculate, ReceiptRow expected) {
+        DiscountCardDecorator discountCardDecorator = new DiscountCardDecorator(
+                new TenPercentOffForMoreThanFiveProducts(
+                        new FullCostCalculator()),
+                new DiscountCard("1234", BigDecimal.valueOf(0.05)));
+
+        ReceiptRow actual = discountCardDecorator.calculate(toCalculate);
+
+        assertThat(actual).isEqualTo(expected);
     }
-
-
 }

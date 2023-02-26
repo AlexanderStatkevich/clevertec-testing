@@ -1,10 +1,11 @@
 package com.statkevich.receipttask.dao.sql;
 
 import com.statkevich.receipttask.domain.DiscountCard;
-import org.h2.jdbcx.JdbcDataSource;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -13,34 +14,40 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.statkevich.receipttask.testutil.DataSourceUtil.getDataSource;
+import static com.statkevich.receipttask.testutil.model.DiscountCardTestBuilder.aCard;
+import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 class SqlDiscountCardDaoTest {
 
-    private static final String SRC = "jdbc:h2:mem:test;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
-    private static final DataSource dataSource = initDataSource();
-    private final SqlDiscountCardDao cardDao = new SqlDiscountCardDao(dataSource);
+    @Container
+    private final PostgreSQLContainer<?> postgreSqlContainer = new PostgreSQLContainer<>("postgres:15.1-alpine")
+            .withDatabaseName("receiptDB")
+            .withUsername("test")
+            .withPassword("test")
+            .withInitScript("test.sql");
 
-    private static DataSource initDataSource() {
-        JdbcDataSource dataSource = new JdbcDataSource();
-        dataSource.setURL(SRC);
-        return dataSource;
-    }
+
+    private DataSource dataSource;
+    private SqlDiscountCardDao cardDao;
+
 
     @BeforeEach
     void init() {
+        dataSource = getDataSource(postgreSqlContainer);
+        cardDao = new SqlDiscountCardDao(dataSource);
+
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
             String sql = """
-                    CREATE TABLE discount_cards (
-                    card_number varchar(255),
-                    discount    decimal(2,3));
-                                            
-                    INSERT INTO discount_cards (card_number, discount)
-                    VALUES
-                    ('1111', 0.03),
-                    ('2222', 0),
-                    ('3333', 0.05);""";
+                    DELETE from discount_cards;
+                                        
+                            INSERT INTO discount_cards (card_number, discount)
+                            VALUES ('0000', 0.0),
+                                    ('1111', 0.03),
+                            ('2222', 0),
+                            ('3333', 0.05);""";
             statement.executeUpdate(sql);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -48,31 +55,20 @@ class SqlDiscountCardDaoTest {
     }
 
     @Test
-    void getByExistedKeyThenReturnExistedCard() {
-        assertEquals(new DiscountCard("3333", BigDecimal.valueOf(0.05)), cardDao.get("3333"));
+    void checkGetMethodReturnAppropriateEntity() {
+        DiscountCard actual = cardDao.get("3333");
+        DiscountCard expected = aCard().withNumber("3333").withDiscount(BigDecimal.valueOf(0.05)).build();
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    void getByAllExistedKeysThenReturnAllExistedCards() {
-        DiscountCard discountCard1 = new DiscountCard("1111", BigDecimal.valueOf(0.03));
-        DiscountCard discountCard2 = new DiscountCard("2222", BigDecimal.valueOf(0));
-        DiscountCard discountCard3 = new DiscountCard("3333", BigDecimal.valueOf(0.05));
-        List<DiscountCard> cardList = List.of(discountCard1, discountCard2, discountCard3);
-        assertEquals(cardList, cardDao.getByKeys(List.of("1111", "2222", "3333")));
+    void checkGetByKeysReturnAppropriateEntities() {
+        DiscountCard expected1 = aCard().build();
+        DiscountCard expected2 = aCard().withNumber("2222").withDiscount(BigDecimal.valueOf(0.0)).build();
+        DiscountCard expected3 = aCard().withNumber("3333").withDiscount(BigDecimal.valueOf(0.05)).build();
+        List<DiscountCard> expected = List.of(expected1, expected2, expected3);
+        List<DiscountCard> actual = cardDao.getByKeys(List.of("1111", "2222", "3333"));
+
+        assertThat(actual).isEqualTo(expected);
     }
-
-
-    @AfterEach
-    void comletion() {
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()) {
-            String sql = """
-                    DROP TABLE discount_cards""";
-            statement.executeUpdate(sql);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
 }
