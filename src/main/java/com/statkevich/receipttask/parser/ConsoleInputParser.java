@@ -3,6 +3,7 @@ package com.statkevich.receipttask.parser;
 import com.statkevich.receipttask.dto.InputValuesDto;
 import com.statkevich.receipttask.reader.ConsoleReader;
 import com.statkevich.receipttask.reader.FileReader;
+import com.statkevich.receipttask.service.ProductService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +14,9 @@ public class ConsoleInputParser extends BaseInputParser<String[]> {
     private final ConsoleReader consoleReader = new ConsoleReader();
     private final FileReader fileReader = new FileReader(consoleReader);
 
+    public ConsoleInputParser(ProductService productService) {
+        super(productService);
+    }
 
     @Override
     protected InputValuesDto parseInternal(String[] order) {
@@ -27,6 +31,4 @@ public class ConsoleInputParser extends BaseInputParser<String[]> {
             return consoleReader.read(orderList);
         }
     }
-
-
 }

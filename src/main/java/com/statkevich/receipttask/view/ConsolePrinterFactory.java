@@ -1,9 +1,11 @@
 package com.statkevich.receipttask.view;
 
-public class ConsolePrinterFactory implements PrinterFactory{
+import java.io.PrintWriter;
+
+public class ConsolePrinterFactory implements PrinterFactory {
 
     @Override
     public Printer createPrinter() {
-        return new ConsolePrinter();
+        return new ConsolePrinter(new PrintWriter(System.out));
     }
 }
