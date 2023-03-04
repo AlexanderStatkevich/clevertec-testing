@@ -2,14 +2,15 @@ package com.statkevich.receipttask.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.statkevich.receipttask.dto.OrderDto;
 import com.statkevich.receipttask.dto.ReceiptDto;
 import com.statkevich.receipttask.exceptions.DataAccessException;
 import com.statkevich.receipttask.exceptions.DiscountCardNotExistException;
 import com.statkevich.receipttask.exceptions.ProductNotExistException;
 import com.statkevich.receipttask.parser.WebInputParser;
-import com.statkevich.receipttask.dto.OrderDto;
 import com.statkevich.receipttask.service.OrderService;
 import com.statkevich.receipttask.service.singletonfactories.OrderServiceSingleton;
+import com.statkevich.receipttask.service.singletonfactories.ProductServiceSingleton;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -23,8 +24,8 @@ import java.util.Map;
 @WebServlet(name = "ReceiptServlet", urlPatterns = "/order")
 public class ReceiptServlet extends HttpServlet {
 
-    private final WebInputParser webInputParser = new WebInputParser();
-    private final OrderService orderService = OrderServiceSingleton.getINSTANCE();
+    private final WebInputParser webInputParser = new WebInputParser(ProductServiceSingleton.getInstance());
+    private final OrderService orderService = OrderServiceSingleton.getInstance();
     private final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
     @Override

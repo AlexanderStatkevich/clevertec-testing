@@ -5,6 +5,10 @@ import java.util.Objects;
 
 public record ReceiptRow(int quantity, String productName, BigDecimal price, BigDecimal salePercentage,
                          BigDecimal totalRow, BigDecimal saleAmount) {
+    private static boolean equalsBigDecimalStripTrailingZeros(BigDecimal first, BigDecimal second) {
+        return first.stripTrailingZeros().compareTo(second.stripTrailingZeros()) == 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -12,14 +16,14 @@ public record ReceiptRow(int quantity, String productName, BigDecimal price, Big
         ReceiptRow that = (ReceiptRow) o;
         return quantity == that.quantity
                 && Objects.equals(productName, that.productName)
-                && Objects.equals(price, that.price)
-                && (salePercentage.compareTo(that.salePercentage) == 0)
-                && (totalRow.compareTo(that.totalRow) == 0)
-                && (saleAmount.compareTo(that.saleAmount) == 0);
+                && equalsBigDecimalStripTrailingZeros(price, that.price)
+                && equalsBigDecimalStripTrailingZeros(salePercentage, that.salePercentage)
+                && equalsBigDecimalStripTrailingZeros(totalRow, that.totalRow)
+                && equalsBigDecimalStripTrailingZeros(saleAmount, that.saleAmount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(quantity, productName, price, salePercentage, totalRow, saleAmount);
+        return Objects.hash(quantity, productName, price.stripTrailingZeros(), salePercentage.stripTrailingZeros(), totalRow.stripTrailingZeros(), saleAmount.stripTrailingZeros());
     }
 }

@@ -9,7 +9,7 @@ public class ProductServiceSingleton {
     private ProductServiceSingleton() {
     }
 
-    public static ProductService getINSTANCE() {
+    public static ProductService getInstance() {
         if (INSTANCE == null) {
             synchronized (ProductServiceSingleton.class) {
                 if (INSTANCE == null) {

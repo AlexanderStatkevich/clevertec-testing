@@ -9,7 +9,7 @@ public class DiscountCardServiceSingleton {
     private DiscountCardServiceSingleton() {
     }
 
-    public static DiscountCardService getINSTANCE() {
+    public static DiscountCardService getInstance() {
         if (INSTANCE == null) {
             synchronized (DiscountCardServiceSingleton.class) {
                 if (INSTANCE == null) {
