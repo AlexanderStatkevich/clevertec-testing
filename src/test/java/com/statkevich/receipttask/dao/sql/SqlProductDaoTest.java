@@ -1,90 +1,86 @@
 package com.statkevich.receipttask.dao.sql;
 
+import com.statkevich.receipttask.domain.CommonProduct;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+import java.util.Set;
+
+import static com.statkevich.receipttask.testutil.DataSourceUtil.getDataSource;
+import static com.statkevich.receipttask.testutil.model.CommonProductTestBuilder.aProduct;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Testcontainers
 class SqlProductDaoTest {
+    @Container
+    private final PostgreSQLContainer<?> postgreSqlContainer = new PostgreSQLContainer<>("postgres:15.1-alpine")
+            .withDatabaseName("receiptDB")
+            .withUsername("test")
+            .withPassword("test")
+            .withInitScript("test.sql");
+    private DataSource dataSource;
+    private SqlProductDao productDao;
 
-//    Невозможно протестировать метод get и getByKeys у Products из за особенностей работы базы H2 с типом данных Array.
-//    В перспективе лучше использовать testContainers во избежание проблем с совместимостью баз данных.
+    @BeforeEach
+    void init() {
+        dataSource = getDataSource(postgreSqlContainer);
+        productDao = new SqlProductDao(dataSource);
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            String sql = """
+                    DELETE from products;
+                    INSERT INTO products (id, name, price, sale_types)
+                    VALUES (1, 'Milk', 5.0, '{}'::varchar[]),
+                           (2, 'Bread', 3.0, '{TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS}'::varchar[]),
+                           (3, 'Meat', 15.0, '{}'::varchar[]);
+                                                   """;
+            statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-//    private static final String SRC = "jdbc:h2:mem:test;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
-//    private static final DataSource dataSource = initDataSource();
-//
-//    private final SqlProductDao productDao = new SqlProductDao(dataSource);
-//
-//    private static DataSource initDataSource() {
-//        JdbcDataSource dataSource = new JdbcDataSource();
-//        dataSource.setURL(SRC);
-//        return dataSource;
-//    }
+    @Test
+    void checkGetMethodReturnAppropriateEntity() {
+        CommonProduct expected = aProduct()
+                .withId(1L)
+                .withName("Milk")
+                .withSaleTypes(Set.of())
+                .build();
+        CommonProduct actual = productDao.get(1L);
 
-//    @BeforeEach
-//    void init() {
-//        try (Connection connection = dataSource.getConnection();
-//             Statement statement = connection.createStatement()) {
-//            String sql = """
-//                    CREATE TABLE products (
-//                    id         bigint,
-//                    name       varchar(255),
-//                    price      decimal,
-//                    sale_types VARCHAR (255) ARRAY
-//                    );
-//                    INSERT INTO
-//                    products(id, name, price, sale_types)
-//                    VALUES(1,'Milk',2.0,ARRAY ['TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS']),
-//                    (2,'Bread',3.0, ARRAY ['TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS']),
-//                    (3,'Meat',15.0, ARRAY ['TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS']);""";
-//            statement.executeUpdate(sql);
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+        assertThat(actual).isEqualTo(expected);
+    }
 
-
-//    @Test
-//    void getByExistedKeyThenReturnExistedProduct() {
-//    CommonProduct commonProduct = CommonProduct.builder()
-//                .setId(1L)
-//                .setName("Milk")
-//                .setPrice(BigDecimal.valueOf(2.0))
-//                .setSaleType(Set.of())
-//                .build();
-//        assertEquals(commonProduct, productDao.get(1L));
-//    }
-
-//    @Test
-//    void getByAllExistedKeysThenReturnAllExistedProducts() {
-//        CommonProduct commonProduct1 = CommonProduct.builder()
-//                .setId(1L)
-//                .setName("Milk")
-//                .setPrice(BigDecimal.valueOf(2.0))
-//                .setSaleType(Set.of())
-//                .build();
-//        CommonProduct commonProduct2 = CommonProduct.builder()
-//                .setId(2L)
-//                .setName("Bread")
-//                .setPrice(BigDecimal.valueOf(3.0))
-//                .setSaleType(Set.of(SaleType.TEN_PERCENT_OFF_FOR_MORE_THAN_FIVE_PRODUCTS))
-//                .build();
-//        CommonProduct commonProduct3 = CommonProduct.builder()
-//                .setId(3L)
-//                .setName("Meat")
-//                .setPrice(BigDecimal.valueOf(15.0))
-//                .setSaleType(Set.of())
-//                .build();
-//        List<Long> ids = List.of(1L,2L,3L);
-//        List<CommonProduct> commonProductList = List.of(commonProduct1,commonProduct2,commonProduct3);
-//        assertEquals(commonProductList, productDao.getByKeys(ids));
-//    }
-
-//    @AfterEach
-//    void comletion() {
-//        try (Connection connection = dataSource.getConnection();
-//             Statement statement = connection.createStatement()) {
-//            String sql = """
-//                    DROP TABLE products""";
-//            statement.executeUpdate(sql);
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
+    @Test
+    void checkGetByKeysReturnAppropriateEntities() {
+        CommonProduct commonProduct1 = aProduct()
+                .withName("Milk")
+                .withSaleTypes(Set.of())
+                .build();
+        CommonProduct commonProduct2 = aProduct()
+                .withId(2L)
+                .withName("Bread")
+                .withPrice(BigDecimal.valueOf(3.0))
+                .build();
+        CommonProduct commonProduct3 = aProduct()
+                .withId(3L)
+                .withName("Meat")
+                .withPrice(BigDecimal.valueOf(15.0))
+                .withSaleTypes(Set.of())
+                .build();
+        List<Long> ids = List.of(1L, 2L, 3L);
+        List<CommonProduct> expected = List.of(commonProduct1, commonProduct2, commonProduct3);
+        List<CommonProduct> actual = productDao.getByKeys(ids);
+        assertThat(actual).isEqualTo(expected);
+    }
 }
