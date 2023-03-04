@@ -63,10 +63,9 @@ class SqlDiscountCardDaoTest {
 
     @Test
     void checkGetByKeysReturnAppropriateEntities() {
-        DiscountCard expected1 = aCard().build();
-        DiscountCard expected2 = aCard().withNumber("2222").withDiscount(BigDecimal.valueOf(0.0)).build();
-        DiscountCard expected3 = aCard().withNumber("3333").withDiscount(BigDecimal.valueOf(0.05)).build();
-        List<DiscountCard> expected = List.of(expected1, expected2, expected3);
+        List<DiscountCard> expected = List.of(aCard().build(),
+                aCard().withNumber("2222").withDiscount(BigDecimal.valueOf(0.0)).build(),
+                aCard().withNumber("3333").withDiscount(BigDecimal.valueOf(0.05)).build());
         List<DiscountCard> actual = cardDao.getByKeys(List.of("1111", "2222", "3333"));
 
         assertThat(actual).isEqualTo(expected);
